@@ -88,7 +88,39 @@ public class SkipList<K,V> implements SimpleMap<K,V> {
 
   @Override
   public V set(K key, V value) {
-    // TODO Auto-generated method stub
+    V result;
+    ArrayList<SLNode<K,V>> pointers = new ArrayList<SLNode<K,V>>(this.height);
+    SLNode<K, V> temp = this.front.get(0);
+    for(int i = this.height; i >= 0; i--) {
+      while(this.comparator.compare(key, temp.next.get(i).key) > 0) {
+        pointers.set(i, temp.next.get(i));
+        temp = temp.next.get(i);
+      }
+    }
+    if(this.comparator.compare(key, temp.key) == 0) {
+      result = temp.value;
+      temp.value = value;
+      return result;
+    } else {
+      int newHeight = randomHeight();
+      SLNode<K, V> newNode = new SLNode<K, V>(key, value, newHeight);
+      if(newHeight > this.height) {
+        ArrayList<SLNode<K,V>> frontPointers = new ArrayList<SLNode<K,V>>(newHeight);
+        for(int i = 0; i < this.height; i++) {
+          frontPointers.set(i, this.front.get(i));
+        }
+        for(int i = this.height; i < newHeight; i++) {
+          frontPointers.set(i, newNode);
+          
+        }
+        this.front = frontPointers;
+        this.height = newHeight;
+      } 
+      
+      
+    }
+    
+    
     return null;
   } // set(K,V)
 
