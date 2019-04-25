@@ -4,7 +4,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.function.BiConsumer;
-import SkipList.SkipNode;
+// import SkipList.SkipNode;
 
 /**
  * An implementation of skip lists.
@@ -183,23 +183,23 @@ public class SkipList<K, V> implements SimpleMap<K, V> {
     if (key == null) {
       throw new NullPointerException("null key");
     }
-    ArrayList<SLNode<K,V>> update = this.front;
+    ArrayList<SLNode<K, V>> update = this.front;
     SLNode<K, V> current = new SLNode<K, V>(null, null, this.height);
     current.next = this.front;
-    for(int i = 0; i < this.height; i++) {
+    for (int i = 0; i < this.height; i++) {
       update.set(i, current);
     }
-    
-    while(this.comparator.compare(key, current.next.get(0).key) > 0) {
+
+    while (this.comparator.compare(key, current.next.get(0).key) > 0) {
       current = current.next.get(0);
-      for(int i = 0; i < current.next.size(); i++) {
+      for (int i = 0; i < current.next.size(); i++) {
         update.set(i, current);
       } // for
     } // while
-    
+
     if (this.comparator.compare(key, current.key) == 0) {
       V result = current.value;
-      for(int i = 0; i < this.height; i++) {
+      for (int i = 0; i < this.height; i++) {
         SLNode<K, V> updateNode = update.get(i);
         if (updateNode.key == null) {
           this.front.set(i, updateNode.next.get(i).next.get(i));
