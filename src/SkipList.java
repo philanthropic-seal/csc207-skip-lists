@@ -4,6 +4,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.function.BiConsumer;
+import SkipList.SkipNode;
 
 /**
  * An implementation of skip lists.
@@ -83,43 +84,69 @@ public class SkipList<K, V> implements SimpleMap<K, V> {
   // | SimpleMap methods |
   // +-------------------+
 
+
+  public void frontUpdate(int newLevel) {
+    // Store old front array temporarily
+    ArrayList<SLNode<K, V>> oldFront = this.front;
+    // Create new front array
+    this.front = new ArrayList<SLNode<K, V>>(newLevel);
+
+    // Copy old values from smaller original front array
+    for (int i = 0; i < this.height; i++) {
+      this.front.set(i, oldFront.get(i));
+    } // for
+
+    // Add placeholders for new levels of front array
+    for (int i = this.height; i <= newLevel; i++) {
+      this.front.set(i, null);
+    } // for
+
+    // Update height
+    this.height = newLevel;
+  }
+
   @Override
   public V set(K key, V value) {
-    V result;
-    ArrayList<SLNode<K, V>> update = new ArrayList<SLNode<K, V>>(this.height);
-    SLNode<K, V> temp;
-    temp.next = this.front;
+    // Store value for return
+    V result = value;
+    // Generate new level
+    int newLevel = randomHeight();
+
+    // Alter front if front is shorter than new height
+    if (newLevel > this.height) {
+      frontUpdate(newLevel);
+    }
+
+    // Move through list and find the location for the new element to be inserted
+    ArrayList<SLNode<K, V>> update = this.front;
+    ArrayList<SLNode<K, V>> x = this.front;
     for (int i = this.height; i >= 0; i--) {
-      while (this.comparator.compare(key, temp.next.get(i).key) > 0) {
-        temp = temp.next.get(i);
-      }
-      update.set(i, temp.next.get(i));
-    }
-    if (this.comparator.compare(key, temp.key) == 0) {
-      result = temp.value;
-      temp.value = value;
-      return result;
+      while (x.get(i) != null && this.comparator.compare(key, x.get(i).key) > 0) {
+        x = x.get(i).next;
+      } // while
+      update.set(i, x.get(i));
+    } // for
+
+    // Check for node update
+    if (this.comparator.compare(key, x.get(0).key) == 0) {
+      // Set value
+      x.get(0).value = value;
+      return value;
     } else {
-      int newHeight = randomHeight();
-      SLNode<K, V> newNode = new SLNode<K, V>(key, value, newHeight);
-      
-    }
+      // If there is no node to update, make a new one and insert it
+      SLNode<K, V> newNode = new SLNode<K, V>(key, value, newLevel);
 
-    if (newHeight > this.height) {
-      ArrayList<SLNode<K, V>> frontPointers = new ArrayList<SLNode<K, V>>(newHeight);
-      for (int i = 0; i < this.height; i++) {
-        frontPointers.set(i, this.front.get(i));
+      // Move through each pointer level
+      for (int i = 0; i <= newLevel; i++) {
+        // Update each pointer in the new node
+        newNode.next.set(i, update.get(i).next.get(i));
+        // Update each pointer which should point to the new node
+        update.get(i).next.set(i, newNode);
       }
-      for (int i = this.height; i < newHeight; i++) {
-        frontPointers.set(i, newNode);
-        newNode.next.set(i, null);
-      }
-      this.front = frontPointers;
-      this.height = newHeight;
+      // Increment size to reflect added entry
+      this.size++;
+      return result;
     }
-
-
-    return null;
   } // set(K,V)
 
   @Override
@@ -129,8 +156,8 @@ public class SkipList<K, V> implements SimpleMap<K, V> {
     }
     SLNode<K, V> current = new SLNode<K, V>(null, null, this.height);
     current.next = this.front;
-    for(int i = this.height - 1; i >= 0; i--) {
-      while(this.comparator.compare(key, current.next.get(i).key) > 0) {
+    for (int i = this.height - 1; i >= 0; i--) {
+      while (this.comparator.compare(key, current.next.get(i).key) > 0) {
         current = current.next.get(i);
       }
     }
@@ -140,7 +167,7 @@ public class SkipList<K, V> implements SimpleMap<K, V> {
       return null;
     }
   } // get(K,V)
-  
+
   @Override
   public int size() {
     return this.size;
@@ -150,11 +177,40 @@ public class SkipList<K, V> implements SimpleMap<K, V> {
   public boolean containsKey(K key) {
     return get(key) != null;
   } // containsKey(K)
-  
+
   @Override
   public V remove(K key) {
-    // TODO Auto-generated method stub
-    return null;
+    if (key == null) {
+      throw new NullPointerException("null key");
+    }
+    ArrayList<SLNode<K,V>> update = this.front;
+    SLNode<K, V> current = new SLNode<K, V>(null, null, this.height);
+    current.next = this.front;
+    for(int i = 0; i < this.height; i++) {
+      update.set(i, current);
+    }
+    
+    while(this.comparator.compare(key, current.next.get(0).key) > 0) {
+      current = current.next.get(0);
+      for(int i = 0; i < current.next.size(); i++) {
+        update.set(i, current);
+      } // for
+    } // while
+    
+    if (this.comparator.compare(key, current.key) == 0) {
+      V result = current.value;
+      for(int i = 0; i < this.height; i++) {
+        SLNode<K, V> updateNode = update.get(i);
+        if (updateNode.key == null) {
+          this.front.set(i, updateNode.next.get(i).next.get(i));
+        } else {
+          updateNode.next.set(i, updateNode.next.get(i));
+        } // if (updateNode.key == null)
+      } // for
+      return result;
+    } else {
+      return null;
+    }
   } // remove(K)
 
   @Override
