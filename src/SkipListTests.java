@@ -55,7 +55,6 @@ public class SkipListTests {
   ArrayList<String> operations;
 
 
-
   // +---------+---------------------------------------------------------
   // | Helpers |
   // +---------+
@@ -224,7 +223,6 @@ public class SkipListTests {
   // +------------------+-------------------------------------------------
   // | Additional Tests |
   // +------------------+
-
 
   /**
    * Verify that a list with a sorted input stays sorted

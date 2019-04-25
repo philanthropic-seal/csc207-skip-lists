@@ -151,21 +151,28 @@ public class SkipList<K, V> implements SimpleMap<K, V> {
 
   @Override
   public V get(K key) {
+    // Check for valid key
     if (key == null) {
       throw new NullPointerException("null key");
-    }
+    } // if
+
+    // Create node to track iteration down the list
     SLNode<K, V> current = new SLNode<K, V>(null, null, this.height);
     current.next = this.front;
+    // Iterate down the skip list
     for (int i = this.height - 1; i >= 0; i--) {
       while (this.comparator.compare(key, current.next.get(i).key) > 0) {
         current = current.next.get(i);
-      }
-    }
+      } // while
+    } // for
+    // If the key is found, return the value
     if (this.comparator.compare(key, current.key) == 0) {
       return current.value;
-    } else {
+    } // if
+    // Otherwise return null
+    else {
       return null;
-    }
+    } // else
   } // get(K,V)
 
   @Override
@@ -180,16 +187,20 @@ public class SkipList<K, V> implements SimpleMap<K, V> {
 
   @Override
   public V remove(K key) {
+    // Check for valid key
     if (key == null) {
       throw new NullPointerException("null key");
-    }
+    } // if
+
+    // Create node and ArrayList to track current position in skiplist
     ArrayList<SLNode<K, V>> update = this.front;
     SLNode<K, V> current = new SLNode<K, V>(null, null, this.height);
     current.next = this.front;
     for (int i = 0; i < this.height; i++) {
       update.set(i, current);
-    }
+    } // for
 
+    // Iterate down the list
     while (this.comparator.compare(key, current.next.get(0).key) > 0) {
       current = current.next.get(0);
       for (int i = 0; i < current.next.size(); i++) {
@@ -197,20 +208,25 @@ public class SkipList<K, V> implements SimpleMap<K, V> {
       } // for
     } // while
 
+    // Check if the element to remove was found
     if (this.comparator.compare(key, current.key) == 0) {
       V result = current.value;
+      // Remove the element and rearrange pointers
       for (int i = 0; i < this.height; i++) {
         SLNode<K, V> updateNode = update.get(i);
         if (updateNode.key == null) {
           this.front.set(i, updateNode.next.get(i).next.get(i));
-        } else {
+        } // if
+        else {
           updateNode.next.set(i, updateNode.next.get(i));
         } // if (updateNode.key == null)
       } // for
       return result;
-    } else {
+    } // if
+    // Return null if element to be removed is not found
+    else {
       return null;
-    }
+    } // else
   } // remove(K)
 
   @Override
