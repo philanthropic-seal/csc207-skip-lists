@@ -93,12 +93,12 @@ public class SkipList<K, V> implements SimpleMap<K, V> {
 
     // Copy old values from smaller original front array
     for (int i = 0; i < this.height; i++) {
-      this.front.set(i, oldFront.get(i));
+      this.front.add(oldFront.get(i));
     } // for
 
     // Add placeholders for new levels of front array
     for (int i = this.height; i <= newLevel; i++) {
-      this.front.set(i, null);
+      this.front.add(null);
     } // for
 
     // Update height
@@ -115,33 +115,45 @@ public class SkipList<K, V> implements SimpleMap<K, V> {
     // Alter front if front is shorter than new height
     if (newLevel > this.height) {
       frontUpdate(newLevel);
+      this.height = newLevel;
     }
 
     // Move through list and find the location for the new element to be inserted
-    ArrayList<SLNode<K, V>> update = this.front;
-    ArrayList<SLNode<K, V>> x = this.front;
-    for (int i = this.height; i >= 0; i--) {
-      while (x.get(i) != null && this.comparator.compare(key, x.get(i).key) > 0) {
-        x = x.get(i).next;
-      } // while
-      update.set(i, x.get(i));
-    } // for
+    ArrayList<SLNode<K, V>> update = new ArrayList<SLNode<K, V>>(this.height);
+    SLNode<K, V> current = new SLNode<K, V>(null, null, this.height);
+    for (int i = 0; i < this.height; i++) {
+      update.add(current);
+      current.next.set(i, this.front.get(i));
+    }
 
+    for (int i = this.height - 1; i >= 0; i--) {
+      while (current.next.get(i) != null && current.next.get(i).key != null
+          && this.comparator.compare(key, current.next.get(i).key) > 0) {
+        current = current.next.get(i);
+      } // while
+      update.set(i, current);
+    } // for
     // Check for node update
-    if (this.comparator.compare(key, x.get(0).key) == 0) {
-      // Set value
-      x.get(0).value = value;
-      return value;
+    current = current.next.get(0);
+    if (current != null && current.key != null && this.comparator.compare(key, current.key) == 0) {
+      result = current.value;
+      current.value = value;
+      return result;
     } else {
       // If there is no node to update, make a new one and insert it
       SLNode<K, V> newNode = new SLNode<K, V>(key, value, newLevel);
 
       // Move through each pointer level
-      for (int i = 0; i <= newLevel; i++) {
+      for (int i = 0; i < newLevel; i++) {
         // Update each pointer in the new node
-        newNode.next.set(i, update.get(i).next.get(i));
-        // Update each pointer which should point to the new node
-        update.get(i).next.set(i, newNode);
+        if (update.get(i).key == null) {
+          newNode.next.set(i, this.front.get(i));
+          this.front.set(i, newNode);
+        } else {
+          newNode.next.set(i, update.get(i).next.get(i));
+          // Update each pointer which should point to the new node
+          update.get(i).next.set(i, newNode);
+        }
       }
       // Increment size to reflect added entry
       this.size++;
@@ -158,21 +170,22 @@ public class SkipList<K, V> implements SimpleMap<K, V> {
 
     // Create node to track iteration down the list
     SLNode<K, V> current = new SLNode<K, V>(null, null, this.height);
-    current.next = this.front;
+    for (int i = 0; i < this.height; i++) {
+      current.next.set(i, this.front.get(i));
+    }
     // Iterate down the skip list
     for (int i = this.height - 1; i >= 0; i--) {
-      while (this.comparator.compare(key, current.next.get(i).key) > 0) {
+      while (current.next.get(i) != null && current.next.get(i).key != null
+          && this.comparator.compare(key, current.next.get(i).key) >= 0) {
         current = current.next.get(i);
       } // while
     } // for
     // If the key is found, return the value
-    if (this.comparator.compare(key, current.key) == 0) {
+    if (current.key != null && this.comparator.compare(key, current.key) == 0) {
       return current.value;
-    } // if
-    // Otherwise return null
-    else {
+    } else {
       return null;
-    } // else
+    }
   } // get(K,V)
 
   @Override
@@ -192,16 +205,17 @@ public class SkipList<K, V> implements SimpleMap<K, V> {
       throw new NullPointerException("null key");
     } // if
 
-    // Create node and ArrayList to track current position in skiplist
-    ArrayList<SLNode<K, V>> update = this.front;
+    // Create node and ArrayList to track current position in skip list
+    ArrayList<SLNode<K, V>> update = new ArrayList<SLNode<K, V>>(this.height);
     SLNode<K, V> current = new SLNode<K, V>(null, null, this.height);
-    current.next = this.front;
     for (int i = 0; i < this.height; i++) {
-      update.set(i, current);
+      update.add(current);
+      current.next.set(i, this.front.get(i));
     } // for
 
     // Iterate down the list
-    while (this.comparator.compare(key, current.next.get(0).key) > 0) {
+    while (current.next.get(0) != null && current.next.get(0).key != null
+        && this.comparator.compare(key, current.next.get(0).key) > 0) {
       current = current.next.get(0);
       for (int i = 0; i < current.next.size(); i++) {
         update.set(i, current);
@@ -209,16 +223,16 @@ public class SkipList<K, V> implements SimpleMap<K, V> {
     } // while
 
     // Check if the element to remove was found
-    if (this.comparator.compare(key, current.key) == 0) {
+    if (current != null && current.key != null && this.comparator.compare(key, current.key) == 0) {
       V result = current.value;
       // Remove the element and rearrange pointers
       for (int i = 0; i < this.height; i++) {
         SLNode<K, V> updateNode = update.get(i);
         if (updateNode.key == null) {
-          this.front.set(i, updateNode.next.get(i).next.get(i));
+          this.front.set(i, current.next.get(i));
         } // if
         else {
-          updateNode.next.set(i, updateNode.next.get(i));
+          updateNode.next.set(i, current.next.get(i));
         } // if (updateNode.key == null)
       } // for
       return result;
@@ -275,7 +289,12 @@ public class SkipList<K, V> implements SimpleMap<K, V> {
 
   @Override
   public void forEach(BiConsumer<? super K, ? super V> action) {
-    // TODO Auto-generated method stub
+    SLNode<K, V> current = this.front.get(0);
+    System.out.println(this.front.get(0).key);
+    // while(current != null) {
+    // action(current.key, current.value);
+    // current = current.next.get(0);
+    // }
 
   } // forEach
 
