@@ -3,6 +3,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Random;
 import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.Test;
 import org.junit.jupiter.api.BeforeEach;
 
@@ -35,7 +36,7 @@ public class SkipListTests {
   // +--------+
 
   /**
-   * A of strings for tests. (Gets set by the subclasses.)
+   * A list of strings for tests. (Gets set by the subclasses.)
    */
   SkipList<String, String> strings;
 
@@ -53,6 +54,7 @@ public class SkipListTests {
    * For reporting errors: a list of the operations we performed.
    */
   ArrayList<String> operations;
+
 
 
   // +---------+---------------------------------------------------------
@@ -144,20 +146,20 @@ public class SkipListTests {
   // +--------------------+
 
   /**
-   * Add an integer to the ints list.
+   * Set an entry in the ints list.
    */
   void set(Integer i) {
     operations.add("set(" + i + ");");
     ints.set(i, value(i));
-  } // add
+  } // set(Integer)
 
   /**
-   * Add a string to the strings list.
+   * Set an entry in the strings list.
    */
   void set(String str) {
     operations.add("set(\"" + str + "\");");
     strings.set(str, value(str));
-  } // add(String)
+  } // set(String)
 
   /**
    * Remove an integer from the ints list.
@@ -170,7 +172,7 @@ public class SkipListTests {
   /**
    * Remove a string from the strings list.
    */
-  void add(String str) {
+  void remove(String str) {
     operations.add("remove(\"" + str + "\");");
     strings.remove(str);
   } // remove(String)
@@ -220,9 +222,14 @@ public class SkipListTests {
     assertFalse(strings.containsKey("hello"));
   } // emptyTest()
 
-  // +------------------+-------------------------------------------------
-  // | Additional Tests |
-  // +------------------+
+  /**
+   * The list should return null if the list does not contain what the user wants to remove.
+   */
+  @Test
+  public void removeEmptyTest() {
+    setup();
+    assertEquals(null, ints.remove(0));
+  } // removeEmptyTest()
 
   /**
    * Verify that a list with a sorted input stays sorted
@@ -250,8 +257,8 @@ public class SkipListTests {
   public void reverseSortedTest() {
     setup();
     // Add a bunch of values
-    for (int i = 100; i > 0; i--) {
-      set(i);
+    for (int i = 0; i > 100; i++) {
+      set(Math.abs(i - 100));
     } // for
     if (!inOrder(ints.keys())) {
       System.err.println("inOrder() failed in reverseSortedTest() for ints");
@@ -306,12 +313,12 @@ public class SkipListTests {
     for (i = 0; i < 10; i++) {
       set(i);
     } // for
-    ints.remove(i);
-    if (ints.containsKey(i)) {
-      log("contains(" + i + ") failed");
+    ints.remove(i - 1);
+    if (ints.containsKey(i - 1)) {
+      log("contains(" + (i - 1) + ") failed");
       printTest();
       dump(ints);
-      fail(i + " is in the skip list");
+      fail((i - 1) + " is in the skip list");
     }
   } // removeEndTest()
 
@@ -335,7 +342,7 @@ public class SkipListTests {
   } // keyNotFoundTest()
 
   /**
-   * Verify that a list with a sorted input stays sorted
+   * Verify that a list with a sorted string input stays sorted
    */
   @Test
   public void sortedStringTest() {
@@ -351,7 +358,7 @@ public class SkipListTests {
       System.err.println();
       fail("The instructions did not produce a sorted list.");
     }
-  } // sortedTest()
+  } // sortedStringTest()
 
   // +-----------------+-------------------------------------------------
   // | RandomizedTests |
