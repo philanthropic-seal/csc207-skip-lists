@@ -77,8 +77,10 @@ public class SkipListTests {
    * Dump a SkipList to stderr.
    */
   static <K, V> void dump(SkipList<K, V> map) {
+    PrintWriter pen = new PrintWriter(System.err, true);
     System.err.print("[");
-    map.forEach((key, value) -> System.err.println(key + ":" + value + " "));
+    map.dump(pen);
+   // map.forEach((key, value) -> System.err.println(key + ":" + value + " "));
     System.err.println("]");
   } // dump
 
@@ -279,6 +281,7 @@ public class SkipListTests {
     for (int i = 0; i < 20; i++) {
       set(i);
     } // for
+    
 
     // Remove even keys (also tests removal from the front)
     for (int i = 0; i < 20; i += 2) {
@@ -287,13 +290,13 @@ public class SkipListTests {
 
     for (int i = 0; i < 20; i++) {
       // if an odd key does not exist, fail
-      if ((i % 2 != 0) && (ints.get(i) == null)) {
+      if ((i % 2 != 0) && (!ints.containsKey(i))) {
         log("get(" + i + ") failed");
         printTest();
         dump(ints);
         fail(i + " is not in the skip list");
         // if an even key exists, fail
-      } else if ((i % 2 == 0) && (ints.get(i) != null)) {
+      } else if ((i % 2 == 0) && (ints.containsKey(i))) {
         log("get(" + i + ") failed");
         printTest();
         dump(ints);
